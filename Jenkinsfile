@@ -4,7 +4,7 @@ pipeline {
   environment {
         SONAR_SCANNER_OPTS = '--add-opens java.base/java.lang=ALL-UNNAMED'
     }
-    
+
   stages {
     stage('Initial cleanup') {
       steps {
@@ -64,14 +64,17 @@ stage('Plot Code Coverage Report') {
     }
 
 stage('SonarQube Quality Gate') {
+      when { branch pattern: "^develop*|^hotfix*|^release*|^main*", comparator: "REGEXP"}
         environment {
             scannerHome = tool 'SonarQubeScanner'
         }
         steps {
             withSonarQubeEnv('sonarqube') {
-                sh "${scannerHome}/bin/sonar-scanner"
+                sh "${scannerHome}/bin/sonar-scanner -Dproject.settings=sonar-project.properties"
             }
-
+            timeout(time: 1, unit: 'MINUTES') {
+                waitForQualityGate abortPipeline: true
+            }
         }
     }
 
